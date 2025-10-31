@@ -20,20 +20,8 @@
         },
       };
     </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
-    "firebase/app": "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"
-  }
-}
-</script>
-</head>
+    <!-- NOTE: The importmap is no longer needed when using Vite -->
+  </head>
   <body class="bg-[#090b0c]">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
