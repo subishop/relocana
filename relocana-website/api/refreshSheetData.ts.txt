@@ -1,0 +1,23 @@
+import { dataCache } from './dataCache';
+
+export default async function handler(request: Request) {
+  // In a real deployment, you would secure this endpoint with a secret key.
+  // const secret = request.headers.get('Authorization');
+  // if (secret !== `Bearer ${process.env.REFRESH_SECRET}`) {
+  //   return new Response('Unauthorized', { status: 401 });
+  // }
+  
+  console.log("Triggering manual data refresh from Google Sheet...");
+
+  // In a real app, this is where you would put your full Google Sheet fetching logic.
+  // For now, we'll just update the timestamp on the existing dummy data.
+  
+  dataCache.lastUpdatedAt = new Date().toISOString();
+
+  console.log("Data cache updated at:", dataCache.lastUpdatedAt);
+
+  return new Response(JSON.stringify({ 
+    message: 'Data refresh successful.', 
+    lastUpdatedAt: dataCache.lastUpdatedAt 
+  }), { status: 200, headers: { 'Content-Type': 'application/json' }});
+}

@@ -1,0 +1,28 @@
+import { dataCache } from './dataCache';
+import { DataCategory } from '../types';
+
+export default async function handler(request: Request) {
+    console.log("API: Fetching data from server cache...");
+
+    // In a real deployment, this data would come from a persistent cache like Vercel KV or Redis.
+    // This function simply returns the current state of the cache.
+    
+    try {
+        const responseBody = JSON.stringify({
+            data: dataCache.data,
+            lastUpdatedAt: dataCache.lastUpdatedAt
+        });
+
+        return new Response(responseBody, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+    } catch (error) {
+        console.error("API Error in getSheetData:", error);
+        return new Response(JSON.stringify({ message: "Internal Server Error" }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}

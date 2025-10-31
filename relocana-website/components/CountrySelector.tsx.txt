@@ -1,0 +1,69 @@
+import React, { useState } from 'react';
+import { COUNTRIES } from '../types';
+
+interface CountrySelectorProps {
+  availableCountries: string[];
+  onCompare: (selected: string[]) => void;
+}
+
+export const CountrySelector: React.FC<CountrySelectorProps> = ({ availableCountries, onCompare }) => {
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggleCountry = (countryName: string) => {
+    setSelected(prev =>
+      prev.includes(countryName)
+        ? prev.filter(c => c !== countryName)
+        : [...prev, countryName]
+    );
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selected.length > 0) {
+      onCompare(selected);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto text-center animate-fade-in">
+      <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+        Start Your Journey
+      </h2>
+      <p className="text-lg text-zinc-400 mb-8">
+        Select the countries you want to compare.
+      </p>
+
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-8">
+          {availableCountries.map(countryName => {
+            const countryInfo = COUNTRIES.find(c => c.name === countryName);
+            const isSelected = selected.includes(countryName);
+
+            return (
+              <button
+                type="button"
+                key={countryName}
+                onClick={() => toggleCountry(countryName)}
+                className={`p-4 border-2 rounded-lg text-center font-semibold transition-all duration-200 relative ${
+                  isSelected
+                    ? 'border-transparent bg-zinc-800 ring-2 ring-orange-500'
+                    : 'border-zinc-800 bg-zinc-900 hover:border-orange-500'
+                }`}
+              >
+                <span className={`font-bold ${countryInfo?.textColor}`}>{countryName}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="submit"
+          disabled={selected.length === 0}
+          className={`w-full md:w-auto px-8 py-3 text-lg font-bold text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#090b0c] transition-colors bg-orange-500 hover:bg-orange-600 focus:ring-orange-400 disabled:bg-zinc-600 disabled:cursor-not-allowed`}
+        >
+          {`Compare (${selected.length})`}
+        </button>
+      </form>
+    </div>
+  );
+};

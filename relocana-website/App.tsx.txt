@@ -1,0 +1,180 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
+import { auth, isFirebaseConfigured, db } from './firebase/config';
+import { Header } from './components/Header';
+import { CountrySelector } from './components/CountrySelector';
+import { ComparisonTable } from './components/ComparisonTable';
+import { Footer } from './components/Footer';
+import { PricingModal } from './components/PricingModal';
+import { AuthModal } from './components/AuthModal';
+import { COUNTRIES } from './types';
+import { Loader } from './components/Loader';
+import { FirebaseNotConfigured } from './components/FirebaseNotConfigured';
+
+
+function App() {
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [isViewingTable, setIsViewingTable] = useState<boolean>(false);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<firebase.User | null>(null);
+  const [isProUser, setIsProUser] = useState<boolean>(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    if (auth && db) {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        setCurrentUser(user);
+        if (user) {
+          try {
+            const userDocRef = db.collection("users").doc(user.uid);
+            const userDoc = await userDocRef.get();
+            if (userDoc.exists && userDoc.data()?.subscriptionStatus === 'pro') {
+              setIsProUser(true);
+            } else {
+              setIsProUser(false);
+            }
+          } catch (error) {
+            console.error("Error fetching user data from Firestore:", error);
+            setIsProUser(false);
+          }
+        } else {
+          setIsProUser(false);
+        }
+        setLoadingAuth(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setLoadingAuth(false);
+    }
+  }, []);
+
+  const handleCompare = useCallback((countries: string[]) => {
+    if (countries.length > 0) {
+      setSelectedCountries(countries);
+      setIsViewingTable(true);
+    }
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setIsViewingTable(false);
+    setSelectedCountries([]);
+  }, []);
+  
+  const handleOpenPricing = useCallback(() => {
+    setIsPricingModalOpen(true);
+  }, []);
+
+  const handleClosePricing = useCallback(() => {
+    setIsPricingModalOpen(false);
+  }, []);
+
+  const handleOpenAuth = useCallback(() => {
+    if (!isFirebaseConfigured) {
+        alert("Firebase is not configured. Please add your credentials to firebase/config.ts to enable authentication.");
+        return;
+    }
+    setIsAuthModalOpen(true);
+  }, []);
+
+  const handleCloseAuth = useCallback(() => {
+    setIsAuthModalOpen(false);
+  }, []);
+  
+  const proceedToCheckout = useCallback(async (planId: string, user: firebase.User) => {
+    setIsRedirecting(true);
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId, userEmail: user.email, userId: user.uid }),
+      });
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('Could not retrieve checkout session.');
+      }
+    } catch (error) {
+      console.error("Failed to create checkout session:", error);
+      alert("Could not connect to payment gateway. Please try again later.");
+      setIsRedirecting(false);
+    }
+  }, []);
+
+  const handleLoginSuccess = useCallback((user: firebase.User) => {
+    setIsAuthModalOpen(false);
+    if (selectedPlanId) {
+      proceedToCheckout(selectedPlanId, user);
+      setSelectedPlanId(null);
+    }
+  }, [selectedPlanId, proceedToCheckout]);
+
+  const handleLogout = useCallback(async () => {
+    if (!auth) return;
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      alert("Could not sign out. Please try again.");
+    }
+  }, []);
+
+  const handleChoosePlan = useCallback((planId: string) => {
+    setSelectedPlanId(planId);
+    if (currentUser) {
+      proceedToCheckout(planId, currentUser);
+    } else {
+      setIsPricingModalOpen(false);
+      handleOpenAuth();
+    }
+  }, [currentUser, handleOpenAuth, proceedToCheckout]);
+
+
+  const availableCountries = COUNTRIES.map(c => c.name);
+
+  if (loadingAuth) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#090b0c]"><Loader /></div>;
+  }
+  
+  if (!isFirebaseConfigured) {
+    return <FirebaseNotConfigured />;
+  }
+
+
+  return (
+    <div className="min-h-screen bg-[#090b0c] text-zinc-300 font-sans flex flex-col">
+      <Header 
+        user={currentUser}
+        onUpgradeClick={handleOpenPricing} 
+        onLoginClick={handleOpenAuth}
+        onLogoutClick={handleLogout}
+        isViewingTable={isViewingTable}
+      />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {!isViewingTable ? (
+          <CountrySelector 
+            availableCountries={availableCountries} 
+            onCompare={handleCompare} 
+          />
+        ) : (
+          <ComparisonTable 
+            selectedCountries={selectedCountries} 
+            onBack={handleBack} 
+            onUpgradeClick={handleOpenPricing}
+            isProUser={isProUser}
+          />
+        )}
+      </main>
+      <Footer />
+      {isPricingModalOpen && <PricingModal onClose={handleClosePricing} onChoosePlan={handleChoosePlan} isLoading={isRedirecting} />}
+      {isAuthModalOpen && <AuthModal onClose={handleCloseAuth} onLoginSuccess={handleLoginSuccess} />}
+    </div>
+  );
+}
+
+export default App;

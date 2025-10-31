@@ -1,0 +1,31 @@
+export interface DataPoint {
+  'Specific Data Point': string;
+  isPro: boolean;
+  values: {
+    [countryName: string]: {
+      value: string | number | boolean;
+      sourceUrl: string;
+      notes: string;
+    };
+  };
+}
+
+export interface DataCategory {
+  'Data Category': string;
+  dataPoints: DataPoint[];
+}
+
+export interface Country {
+  name: string;
+  color: string;
+  textColor: string;
+}
+
+export const COUNTRIES: Country[] = [
+    { name: 'Nigeria', color: 'bg-green-500/20', textColor: 'text-green-300' },
+    { name: 'Rwanda', color: 'bg-blue-500/20', textColor: 'text-blue-300' },
+    { name: 'Kenya', color: 'bg-red-500/20', textColor: 'text-red-300' },
+    { name: 'Ghana', color: 'bg-yellow-500/20', textColor: 'text-yellow-300' },
+    { name: 'South Africa', color: 'bg-indigo-500/20', textColor: 'text-indigo-300' },
+    { name: 'Tanzania', color: 'bg-teal-500/20', textColor: 'text-teal-300' },
+];

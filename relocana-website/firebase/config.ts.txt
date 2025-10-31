@@ -1,0 +1,43 @@
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
+
+// This is your unique configuration from your Firebase project.
+const firebaseConfig = {
+  apiKey: "AIzaSyAE3jgbP4h4Vsm5AI_TaLqv7amo5tiGrNA",
+  authDomain: "african-compass.firebaseapp.com",
+  projectId: "african-compass",
+  storageBucket: "african-compass.firebasestorage.app",
+  messagingSenderId: "1029619360135",
+  appId: "1:1029619360135:web:de5352d2080d0d541f7322",
+  measurementId: "G-VEPV0RK138"
+};
+
+let app: firebase.app.App;
+let auth: firebase.auth.Auth | null = null;
+let db: firebase.firestore.Firestore | null = null;
+let googleProvider: firebase.auth.GoogleAuthProvider | null = null;
+let isFirebaseConfigured = false;
+
+// This check ensures that the config has been filled out.
+if (firebaseConfig && firebaseConfig.apiKey !== "...") {
+  try {
+    if (!firebase.apps.length) {
+      app = firebase.initializeApp(firebaseConfig);
+    } else {
+      app = firebase.app();
+    }
+    auth = firebase.auth();
+    db = firebase.firestore();
+    googleProvider = new firebase.auth.GoogleAuthProvider();
+    isFirebaseConfigured = true;
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+    isFirebaseConfigured = false;
+  }
+} else {
+  console.warn("Firebase config is not set. Authentication features will be disabled.");
+}
+
+// Export the services for the rest of the application to use
+export { app, auth, db, googleProvider, isFirebaseConfigured };

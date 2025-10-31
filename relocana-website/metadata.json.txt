@@ -1,0 +1,5 @@
+{
+  "name": "RELOCANA",
+  "description": "An application to compare relocation data for various African countries, helping users make informed decisions about moving.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,49 @@
+export default async function handler(request: Request) {
+    if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    try {
+        const { uid, email } = await request.json();
+
+        if (!uid || !email) {
+            return new Response(
+                JSON.stringify({ message: 'User ID and email are required.' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
+
+        console.log(`(Simulation) Checking for ${email} in free access list.`);
+        // In a real app, you'd check Firestore here using the Admin SDK.
+        // const adminDb = getFirestore();
+        // const whitelistDoc = await adminDb.collection('freeAccessEmails').doc(email).get();
+        // const isWhitelisted = whitelistDoc.exists;
+        
+        // For simulation, we assume they are not on the list.
+        const isWhitelisted = false; 
+        
+        const subscriptionStatus = isWhitelisted ? 'pro' : 'free';
+
+       console.log(`(Simulation) Firestore profile being created for user ${uid} with status: ${subscriptionStatus}.`);
+       // In a real app, you would use the Admin SDK to set the data:
+       // await adminDb.collection('users').doc(uid).set({
+       //   email: email,
+       //   subscriptionStatus: subscriptionStatus,
+       //   createdAt: new Date(),
+       // });
+
+
+       return new Response(
+            JSON.stringify({ message: 'User profile created successfully.' }),
+            { status: 201, headers: { 'Content-Type': 'application/json' } }
+       );
+
+    } catch (error) {
+        console.error('Error creating user profile:', error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return new Response(
+            JSON.stringify({ message: `Internal Server Error: ${errorMessage}` }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+    }
+}

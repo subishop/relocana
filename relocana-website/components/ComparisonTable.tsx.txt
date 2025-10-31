@@ -1,0 +1,182 @@
+import React, { useState, useEffect } from 'react';
+import { COUNTRIES, Country, DataCategory } from '../types';
+import { PaywallLock } from './PaywallLock';
+import { Loader } from './Loader';
+import { LockedColumn } from './LockedColumn';
+
+interface ComparisonTableProps {
+  selectedCountries: string[];
+  onBack: () => void;
+  onUpgradeClick: () => void;
+  isProUser: boolean;
+}
+
+const LockIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+    </svg>
+);
+
+const NotesModal: React.FC<{ content: string; country: Country; onClose: () => void }> = ({ content, country, onClose }) => (
+  <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={onClose}>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+      <div className={`p-2 rounded-t-lg -m-6 mb-4 ${country.color}`}>
+         <h3 className={`text-xl font-bold ${country.textColor}`}>Notes for {country.name}</h3>
+      </div>
+      <p className="text-zinc-300 whitespace-pre-wrap">{content}</p>
+      <button onClick={onClose} className="mt-6 w-full px-4 py-2 font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-orange-400">
+        Close
+      </button>
+    </div>
+  </div>
+);
+
+const FreeTierInfo: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => (
+    <div className="mb-6 p-4 bg-orange-900/50 border-l-4 border-orange-500 rounded-r-lg flex items-center justify-between">
+        <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-orange-200">
+                The free plan is limited to comparing 2 countries.
+                <button onClick={onUpgrade} className="font-bold underline ml-1 hover:text-white">
+                    Unlock now
+                </button>
+                {' '}to view your full comparison.
+            </p>
+        </div>
+    </div>
+);
+
+
+export const ComparisonTable: React.FC<ComparisonTableProps> = ({ selectedCountries, onBack, onUpgradeClick, isProUser }) => {
+  const [data, setData] = useState<DataCategory[] | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeNotes, setActiveNotes] = useState<{ content: string; country: Country } | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('/api/getSheetData');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const serverData = await response.json();
+            if (serverData.data) {
+                setData(serverData.data);
+                setLastUpdatedAt(serverData.lastUpdatedAt);
+            } else {
+                throw new Error("Invalid data format from server");
+            }
+        } catch (err) {
+            setError('Could not load comparison data. Please try again later.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+    loadData();
+  }, []);
+
+  const countries = COUNTRIES.filter(c => selectedCountries.includes(c.name));
+
+  if (loading) {
+    return <Loader />;
+  }
+  
+  if (error || !data) {
+    return (
+        <div className="text-center p-8 bg-red-900/50 border border-red-500 rounded-lg">
+            <h3 className="text-xl font-bold text-red-200">An Error Occurred</h3>
+            <p className="text-red-300 mt-2">{error || 'Data could not be loaded.'}</p>
+        </div>
+    );
+  }
+
+  const showFreeTierInfo = !isProUser && selectedCountries.length > 2;
+
+  return (
+    <div className="animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
+            <button onClick={onBack} className="px-4 py-2 font-semibold text-white bg-zinc-800 rounded-lg hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-colors">
+                &larr; Back to Selection
+            </button>
+            {lastUpdatedAt && <p className="text-xs text-zinc-500">Last Updated: {new Date(lastUpdatedAt).toLocaleString()}</p>}
+        </div>
+
+        {showFreeTierInfo && <FreeTierInfo onUpgrade={onUpgradeClick} />}
+        
+      <div className="overflow-x-auto bg-zinc-900 rounded-xl shadow-lg border border-zinc-800">
+        <table className="w-full text-sm text-left text-zinc-400">
+          <thead className="text-xs text-zinc-300 uppercase bg-zinc-800/50 sticky top-0 z-10">
+            <tr>
+              <th scope="col" className="px-6 py-3 font-bold min-w-[150px] lg:min-w-[200px]">Data Category</th>
+              <th scope="col" className="px-6 py-3 font-bold min-w-[200px] lg:min-w-[250px]">Specific Data Point</th>
+              {countries.map((country, countryIndex) => {
+                const isLocked = !isProUser && countryIndex >= 2;
+                return (
+                    <th key={country.name} scope="col" className={`px-6 py-3 font-bold min-w-[150px] lg:min-w-[200px] text-center ${country.color} ${country.textColor} ${isLocked ? 'opacity-60' : ''}`}>
+                        {isLocked && <LockIcon />}
+                        {country.name}
+                    </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map(category => (
+              <React.Fragment key={category['Data Category']}>
+                {category.dataPoints.map((point, pointIndex) => (
+                  <tr key={point['Specific Data Point']} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                    {pointIndex === 0 && (
+                       <td rowSpan={category.dataPoints.length} className="px-6 py-4 font-semibold text-white bg-zinc-900/50 align-top">
+                         {category['Data Category']}
+                       </td>
+                    )}
+                    <td className="px-6 py-4 font-medium text-zinc-300">{point['Specific Data Point']}</td>
+                    {countries.map((country, countryIndex) => {
+                      const cellData = point.values[country.name];
+                      const isLocked = !isProUser && countryIndex >= 2;
+
+                      if (!cellData) return <td key={country.name} className={`px-6 py-4 text-center ${isLocked ? country.color + ' opacity-60' : ''}`}>-</td>;
+
+                      return (
+                        <td key={country.name} className={`px-6 py-4 text-center align-middle relative ${country.color}`}>
+                           {isLocked ? (
+                                <LockedColumn onUpgradeClick={onUpgradeClick} />
+                           ) : point.isPro && !isProUser ? (
+                            <PaywallLock 
+                              onUnlockClick={onUpgradeClick} 
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <span className="font-bold text-base text-white">{cellData.value.toString()}</span>
+                                <div className="flex items-center space-x-2 mt-2">
+                                    <a href={cellData.sourceUrl} target="_blank" rel="noopener noreferrer" title="View Source" className="text-orange-400 hover:text-orange-300 text-lg">🔗</a>
+                                    {cellData.notes && (
+                                      <>
+                                        <span className="text-zinc-600">&middot;</span>
+                                        <button onClick={() => setActiveNotes({ content: cellData.notes, country })} className="text-orange-400 hover:underline text-xs">Notes</button>
+                                      </>
+                                    )}
+                                </div>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {activeNotes && <NotesModal content={activeNotes.content} country={activeNotes.country} onClose={() => setActiveNotes(null)} />}
+    </div>
+  );
+};

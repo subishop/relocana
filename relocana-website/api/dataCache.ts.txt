@@ -1,0 +1,73 @@
+import { DataCategory } from '../types';
+
+// This simulates a simple in-memory cache on the server.
+// In a real deployment, this should be a persistent cache like Vercel KV or Redis
+// so the data isn't lost on every serverless function invocation.
+interface Cache {
+    data: DataCategory[];
+    lastUpdatedAt: string;
+}
+
+export const dataCache: Cache = {
+    lastUpdatedAt: new Date().toISOString(),
+    data: [
+        {
+          'Data Category': 'Visa & Entry',
+          dataPoints: [
+            {
+              'Specific Data Point': 'Visa-free entry duration',
+              isPro: false,
+              values: {
+                Nigeria: { value: '30 days', sourceUrl: 'https://immigration.gov.ng/', notes: 'For ECOWAS passport holders.' },
+                Rwanda: { value: '90 days', sourceUrl: 'https://www.migration.gov.rw/', notes: 'Available to all African Union, Commonwealth, and La Francophonie nations.' },
+                Kenya: { value: '60 days', sourceUrl: 'https://evisa.go.ke/evisa.html', notes: 'Requires e-Visa for most nationalities prior to arrival.' },
+                Ghana: { value: 'Visa Free', sourceUrl: 'https://home.gis.gov.gh/', notes: 'For all African passport holders for up to 30 days.' },
+                'South Africa': { value: '90 days', sourceUrl: 'http://www.dha.gov.za/', notes: 'Varies by country, many are visa-exempt.' },
+                Tanzania: { value: '90 days', sourceUrl: 'https://eservices.immigration.go.tz/visa/', notes: 'For East African Community members.' },
+              },
+            },
+            {
+              'Specific Data Point': 'Visa-on-arrival availability',
+              isPro: false,
+              values: {
+                Nigeria: { value: 'Yes', sourceUrl: 'https://immigration.gov.ng/', notes: 'Pre-approval required online.' },
+                Rwanda: { value: 'Yes', sourceUrl: 'https://www.migration.gov.rw/', notes: 'Available for all nationalities.' },
+                Kenya: { value: 'No', sourceUrl: 'https://evisa.go.ke/evisa.html', notes: 'e-Visa must be obtained beforehand.' },
+                Ghana: { value: 'Yes', sourceUrl: 'https://home.gis.gov.gh/', notes: 'For select nationalities, pre-clearance might be needed.' },
+                'South Africa': { value: 'No', sourceUrl: 'http://www.dha.gov.za/', notes: 'Visas must be obtained from a South African diplomatic mission.' },
+                Tanzania: { value: 'Yes', sourceUrl: 'https://eservices.immigration.go.tz/visa/', notes: 'Available for most nationalities at major ports of entry.' },
+              },
+            },
+            {
+              'Specific Data Point': 'Visa-on-arrival cost',
+              isPro: true,
+              values: {
+                Nigeria: { value: '$50 USD', sourceUrl: 'https://immigration.gov.ng/', notes: '' },
+                Rwanda: { value: '$80 USD', sourceUrl: 'https://www.migration.gov.rw/', notes: '' },
+                Kenya: { value: 'N/A', sourceUrl: 'https://evisa.go.ke/evisa.html', notes: '' },
+                Ghana: { value: '$150 USD', sourceUrl: 'https://home.gis.gov.gh/', notes: '' },
+                'South Africa': { value: 'N/A', sourceUrl: 'http://www.dha.gov.za/', notes: '' },
+                Tanzania: { value: '$100 USD', sourceUrl: 'https://eservices.immigration.go.tz/visa/', notes: 'For US citizens, other nationalities may vary.' },
+              },
+            },
+          ],
+        },
+        {
+          'Data Category': 'Taxation',
+          dataPoints: [
+            {
+              'Specific Data Point': 'Personal income tax top rate',
+              isPro: true,
+              values: {
+                Nigeria: { value: '24%', sourceUrl: 'https://www.firs.gov.ng/', notes: 'Applies to income over NGN 3,200,000.' },
+                Rwanda: { value: '30%', sourceUrl: 'https://www.rra.gov.rw/', notes: 'Applies to income over RWF 1,200,000 per month.' },
+                Kenya: { value: '30%', sourceUrl: 'https://www.kra.go.ke/', notes: 'Applies to income over KES 32,333 per month.' },
+                Ghana: { value: '30%', sourceUrl: 'https://gra.gov.gh/', notes: 'Progressive rates up to 30%.' },
+                'South Africa': { value: '45%', sourceUrl: 'https://www.sars.gov.za/', notes: 'Applies to income over ZAR 1,731,601.' },
+                Tanzania: { value: '30%', sourceUrl: 'https://www.tra.go.tz/', notes: 'Applies to income over TZS 1,000,000 per month.' },
+              },
+            },
+          ],
+        },
+      ]
+};

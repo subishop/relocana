@@ -1,0 +1,40 @@
+export default async function handler(request: Request) {
+    if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    try {
+        const { planId, userEmail, userId } = await request.json();
+
+        if (!planId || !userEmail || !userId) {
+          return new Response(
+            JSON.stringify({ message: 'Plan ID, user email, and user ID are required.' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log(`Creating Stripe checkout session for user: ${userEmail} with plan: ${planId}`);
+        
+        // In a real deployment, this would use the Stripe SDK to create a real session.
+        // For now, we return a simulated URL.
+        const simulatedStripeUrl = `https://checkout.stripe.com/pay/cs_test_a1B2c3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6?prefilled_email=${encodeURIComponent(userEmail)}`;
+        const checkoutUrl = simulatedStripeUrl;
+
+        if (!checkoutUrl) {
+            throw new Error("Could not create Stripe session.");
+        }
+
+        return new Response(
+          JSON.stringify({ url: checkoutUrl }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+
+    } catch (error) {
+        console.error('Error creating checkout session:', error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return new Response(
+            JSON.stringify({ message: `Internal Server Error: ${errorMessage}` }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+    }
+}

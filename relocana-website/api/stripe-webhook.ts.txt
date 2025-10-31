@@ -1,0 +1,37 @@
+export default async function handler(request: Request) {
+    if (request.method !== 'POST') {
+        return new Response('Method Not Allowed', { status: 405 });
+    }
+   
+    // In a real deployment, you would verify the webhook signature for security.
+    // For this simulation, we'll just process the event.
+    const event = await request.json();
+
+    // Handle the 'checkout.session.completed' event
+    switch (event.type) {
+        case 'checkout.session.completed':
+            const session = event.data.object;
+            const userId = session.metadata.userId;
+
+            if (!userId) {
+                console.error("Webhook received but no userId in metadata.");
+                return new Response('User ID missing from session metadata.', { status: 400 });
+            }
+
+            console.log(`(Simulation) Payment successful for user: ${userId}.`);
+            console.log(`(Simulation) In a real app, you would now update the user's record in Firestore to set subscriptionStatus to 'pro'.`);
+            
+            // In a real app, using the Firebase Admin SDK, the logic would be:
+            // const adminDb = getFirestore();
+            // const userDocRef = adminDb.collection('users').doc(userId);
+            // await userDocRef.update({ subscriptionStatus: 'pro' });
+
+            break;
+        
+        default:
+            console.log(`Unhandled event type ${event.type}`);
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
+}

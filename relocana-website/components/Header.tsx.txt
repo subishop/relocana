@@ -1,0 +1,55 @@
+import React from 'react';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+
+interface HeaderProps {
+  user: firebase.User | null;
+  onUpgradeClick: () => void;
+  onLoginClick: () => void;
+  onLogoutClick: () => void;
+  isViewingTable?: boolean;
+}
+
+export const Header: React.FC<HeaderProps> = ({ user, onUpgradeClick, onLoginClick, onLogoutClick, isViewingTable }) => {
+  const upgradeButtonText = isViewingTable ? 'Unlock All' : 'Upgrade';
+    
+  return (
+    <header className="py-4 border-b border-zinc-800">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <div className="flex items-center">
+            <img 
+                src="https://i.ibb.co/8g581QDT/Relocana-logo-01.webp" 
+                alt="RELOCANA Logo" 
+                className="h-10"
+            />
+        </div>
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <>
+              <span className="text-sm text-zinc-400 hidden sm:block">Welcome, {user.email}</span>
+              <button
+                onClick={onLogoutClick}
+                className="px-4 py-2 font-semibold text-zinc-200 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+             <button
+                onClick={onLoginClick}
+                className="px-4 py-2 font-semibold text-zinc-200 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+              >
+                Login / Sign Up
+              </button>
+          )}
+          <button
+            onClick={onUpgradeClick}
+            className="px-4 py-2 font-semibold text-white bg-[#1a76e8] rounded-lg hover:bg-[#1666c7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#090b0c] focus:ring-[#1a76e8] transition-colors"
+          >
+            {upgradeButtonText}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+};
